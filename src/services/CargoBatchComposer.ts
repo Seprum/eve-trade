@@ -41,8 +41,7 @@ export class CargoBatchComposer {
     const buyPricePerCubicMetre = batch.buyAt / batch.item.volume;
 
     const profitPerCubicMetre =
-      ((batch.sellAt * (100 - this.tax)) / 100 - batch.buyAt) /
-      batch.item.volume;
+      (this.excludeSalesTax(batch.sellAt) - batch.buyAt) / batch.item.volume;
 
     return this.allIn
       ? profitPerCubicMetre
@@ -79,7 +78,7 @@ export class CargoBatchComposer {
               );
 
               const netProfit =
-                (bestSellOrder.price * (100 - this.tax)) / 100 - buyOrder.price;
+                this.excludeSalesTax(bestSellOrder.price) - buyOrder.price;
 
               this.batches.push({
                 id: this.batches.length,
@@ -116,6 +115,10 @@ export class CargoBatchComposer {
 
     // Most profitable batches (per cubic metre) should be consumed first
     this.batches = orderBy(this.batches, this.getBatchBuyPriority, ['desc']);
+  }
+
+  excludeSalesTax(amount: number) {
+    return (amount * (100 - this.tax)) / 100;
   }
 
   getMostProfitableLoad(
@@ -156,9 +159,8 @@ export class CargoBatchComposer {
       );
 
       const batchBuyAt = batch.buyAt * affordedQuantity;
-      const batchSellAt = batch.sellAt * affordedQuantity;
-      const batchNetProfit =
-        ((batch.sellAt * (100 - tax)) / 100 - batch.buyAt) * affordedQuantity;
+      const batchSellAt = this.excludeSalesTax(batch.sellAt * affordedQuantity);
+      const batchNetProfit = batchSellAt - batchBuyAt;
       const batchRoi = (batchNetProfit * 100) / batchBuyAt;
 
       if (affordedQuantity > 0 && batchRoi >= roi) {
@@ -197,8 +199,6 @@ export class CargoBatchComposer {
       batchIndex++;
     }
 
-    const totalNetProfit = (totalSellAt * (100 - tax)) / 100 - totalBuyAt;
-
     return {
       buyLists: buyLists.filter(
         buyList => buyList.totalNetProfit > MIN_BUY_LIST_PROFIT
@@ -208,7 +208,7 @@ export class CargoBatchComposer {
         budgetLeft: budgetLeft < eps ? 0 : budgetLeft,
         totalBuyAt,
         totalSellAt,
-        totalNetProfit
+        totalNetProfit: totalSellAt - totalBuyAt
       }
     };
   }

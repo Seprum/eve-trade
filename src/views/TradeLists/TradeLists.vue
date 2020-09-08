@@ -52,7 +52,7 @@
                 {{ currency(activeBuyList.totalBuyAt) }} ISK
               </amount>
               <amount
-                title="Current list sell price"
+                title="Current list sell price (excluding sales tax)"
                 icon="mdi-credit-card-plus-outline"
               >
                 {{ currency(activeBuyList.totalSellAt) }} ISK
@@ -109,7 +109,7 @@
               {{ currency(loadInfo.totalBuyAt) }} ISK</amount
             >
             <amount
-              title="Total sell price"
+              title="Total sell price (excluding sales tax)"
               icon="mdi-credit-card-plus-outline"
             >
               {{ currency(loadInfo.totalSellAt) }} ISK</amount

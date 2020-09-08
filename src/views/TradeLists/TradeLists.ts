@@ -172,8 +172,10 @@ export default class TradeLists extends Vue {
 
   updateInfo(batch: Batch) {
     const batchBuyAt = batch.buyAt * batch.quantity;
-    const batchSellAt = batch.sellAt * batch.quantity;
-    const batchNetProfit = (batchSellAt * (100 - this.tax)) / 100 - batchBuyAt;
+    const batchSellAt = this.cargoBatchComposer.excludeSalesTax(
+      batch.sellAt * batch.quantity
+    );
+    const batchNetProfit = batchSellAt - batchBuyAt;
     const batchVolume = batch.item.volume * batch.quantity;
 
     this.activeBuyList.totalBuyAt -= batchBuyAt;
