@@ -1,10 +1,16 @@
 import Vue from 'vue';
 import Vuex from 'vuex';
-import numeral from 'numeral';
 
-import { Station, Item, Dictionary } from '@/types';
+import { Station, Item, Dictionary, NotifySettings } from '@/types';
 import { staticDataSource, staticDataStore } from '@/services';
 import { mapTradeHubsToStations } from '@/helpers/mapTradeHubsToStations';
+import {
+  DEFAULT_BUDGET,
+  DEFAULT_CARGO_CAPACITY,
+  DEFAULT_TAX,
+  DEFAULT_PROFIT_CHECK_INTERVAL,
+  DEFAULT_PROFIT_CHECK_MIN_VALUE
+} from '@/constants';
 
 Vue.use(Vuex);
 
@@ -19,22 +25,52 @@ export type State = {
   budget: number;
   cargoCapacity: number;
   tax: number;
+  notifySettings: NotifySettings;
+};
+
+const getInitialState = (): State => {
+  const budget = +localStorage.getItem('budget')! || DEFAULT_BUDGET;
+  const cargoCapacity =
+    +localStorage.getItem('cargoCapacity')! || DEFAULT_CARGO_CAPACITY;
+  const tax = +localStorage.getItem('tax')! || DEFAULT_TAX;
+  const notifySettings: NotifySettings = JSON.parse(
+    localStorage.getItem('notifySettings')
+  ) || {
+    isEnabled: false,
+    interval: DEFAULT_PROFIT_CHECK_INTERVAL,
+    minProfit: DEFAULT_PROFIT_CHECK_MIN_VALUE
+  };
+  const stations: Station[] = JSON.parse(localStorage.getItem('eveStations'));
+  const items: Dictionary<Item> = JSON.parse(localStorage.getItem('eveItems'));
+  const isStaticDataLoaded = !!stations && !!items;
+
+  const fromStationId = localStorage.getItem('fromStationId');
+  const toStationId = localStorage.getItem('toStationId');
+
+  return {
+    loadingStatus: isStaticDataLoaded ? 'Stations & items data loaded' : '',
+    isStaticDataLoaded,
+    stations: stations || [],
+    tradeHubs: stations ? mapTradeHubsToStations(stations) : [],
+    getItems: items ? () => items : () => ({}),
+    fromStation:
+      stations && fromStationId
+        ? stations.find(station => station.id === +fromStationId)
+        : null,
+    toStation:
+      stations && toStationId
+        ? stations.find(station => station.id === +toStationId)
+        : null,
+    budget,
+    cargoCapacity,
+    tax,
+    notifySettings
+  };
 };
 
 export default new Vuex.Store<State>({
   strict: process.env.NODE_ENV !== 'production',
-  state: {
-    loadingStatus: '',
-    isStaticDataLoaded: false,
-    stations: [],
-    tradeHubs: [],
-    getItems: () => ({}),
-    fromStation: null,
-    toStation: null,
-    budget: +localStorage.getItem('budget')! || 100000000,
-    cargoCapacity: +localStorage.getItem('cargoCapacity')! || 500,
-    tax: +localStorage.getItem('tax')! || 5
-  },
+  state: getInitialState(),
   getters: {
     stations: state => [...state.tradeHubs, ...state.stations],
     fromStationId: state => state.fromStation?.id,
@@ -54,17 +90,13 @@ export default new Vuex.Store<State>({
     setStaticDataLoaded(state) {
       state.isStaticDataLoaded = true;
     },
-    setBudget(state, budget: string) {
-      const budgetValue = numeral(budget).value();
-
-      state.budget = budgetValue;
-      localStorage.setItem('budget', budgetValue.toString());
+    setBudget(state, budget: number) {
+      state.budget = budget;
+      localStorage.setItem('budget', budget.toString());
     },
-    setCargoCapacity(state, cargoCapacity: string) {
-      const cargoCapacityValue = numeral(cargoCapacity).value();
-
-      state.cargoCapacity = cargoCapacityValue;
-      localStorage.setItem('cargoCapacity', cargoCapacityValue.toString());
+    setCargoCapacity(state, cargoCapacity: number) {
+      state.cargoCapacity = cargoCapacity;
+      localStorage.setItem('cargoCapacity', cargoCapacity.toString());
     },
     setTax(state, tax: number) {
       state.tax = tax;
@@ -101,6 +133,10 @@ export default new Vuex.Store<State>({
       state.toStation = lastFromStation;
       localStorage.setItem('fromStationId', state.fromStation!.id.toString());
       localStorage.setItem('toStationId', state.toStation!.id.toString());
+    },
+    setNotifySettings(state, settings) {
+      state.notifySettings = settings;
+      localStorage.setItem('notifySettings', JSON.stringify(settings));
     }
   },
   actions: {
@@ -142,6 +178,9 @@ export default new Vuex.Store<State>({
       commit('setLoadingStatus', 'Stations & items data loaded');
     },
     async refreshStaticData({ commit }) {
+      staticDataSource.onStatusChange = status =>
+        commit('setLoadingStatus', status);
+
       const stations = await staticDataSource.getStationsData();
 
       commit('setStations', stations);

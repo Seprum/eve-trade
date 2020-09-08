@@ -1,5 +1,15 @@
+<style lang="scss" src="./ResultsView.scss" scoped></style>
+<script lang="ts" src="./ResultsView.ts"></script>
+
 <template>
-  <v-container style="height: 100vh" d-flex align-center justify-center>
+  <v-container
+    style="height: 0"
+    pa-4
+    d-flex
+    align-center
+    justify-center
+    flex-grow-1
+  >
     <v-progress-circular indeterminate v-if="!dataLoaded" />
     <v-data-table
       v-else
@@ -9,22 +19,12 @@
       hide-default-footer
       fixed-header
       dense
-      class="ma-2 elevation-1"
+      class="elevation-1"
     >
       <template v-slot:top>
         <v-layout flex-column class="header elevation-1">
-          <v-layout justify-center align-end pt-4 px-4>
-            <v-autocomplete
-              label="From"
-              item-value="id"
-              item-text="name"
-              :item-disabled="isFromStationDisabled"
-              hide-details
-              :items="tradeHubs"
-              :value="fromStation.id"
-              @input="setFromStation($event)"
-            />
-
+          <v-layout justify-center align-center pt-4 px-4>
+            <span class="text-center">{{ fromStation.name }}</span>
             <v-hover v-slot:default="{ hover }">
               <v-btn
                 class="mx-4"
@@ -35,16 +35,7 @@
                 <v-icon click>mdi-arrow-right</v-icon>
               </v-btn>
             </v-hover>
-            <v-autocomplete
-              label="To"
-              item-value="id"
-              item-text="name"
-              :item-disabled="isToStationDisabled"
-              hide-details
-              :items="tradeHubs"
-              :value="toStation.id"
-              @input="setToStation($event)"
-            />
+            <span class="text-center">{{ toStation.name }}</span>
           </v-layout>
           <v-row no-gutters>
             <v-col cols="12" lg="4" class="d-flex align-center px-4">
@@ -92,11 +83,11 @@
       </template>
       <template v-slot:item.quantity="{ item }">
         <v-edit-dialog :return-value="item.quantity">
-          {{ quantity(item.quantity) }}
+          {{ integer(item.quantity) }}
           <template v-slot:input>
             <v-text-field
               v-quantity
-              :value="quantity(item.quantity)"
+              :value="integer(item.quantity)"
               @change="changeQuantity(item, $event)"
             />
           </template>
@@ -123,7 +114,7 @@
         Empty
       </template>
       <template v-if="!!activeBuyList" v-slot:footer>
-        <v-layout d-flex align-end>
+        <v-layout d-flex align-end class="footer">
           <v-layout d-flex justify-space-between align-center ma-4 wrap>
             <amount
               title="Total buy price"
@@ -169,6 +160,3 @@
     </v-snackbar>
   </v-container>
 </template>
-
-<script lang="ts" src="./TradeLists.ts"></script>
-<style lang="scss" src="./TradeLists.scss" scoped></style>

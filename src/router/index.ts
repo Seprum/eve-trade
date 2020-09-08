@@ -1,39 +1,41 @@
 import Vue from 'vue';
 import VueRouter, { RouteConfig } from 'vue-router';
-import TradeSetup from '@/views/TradeSetup';
-import TradeLists from '@/views/TradeLists';
+import SetupView from '@/views/SetupView';
+import ResultsView from '@/views/ResultsView';
 import store from '@/store';
 
 Vue.use(VueRouter);
 
 const mainTitle = 'EVE Trade';
-const routes: Array<RouteConfig> = [
+export const routes: Array<RouteConfig> = [
   {
     path: '/',
     name: 'Setup',
-    component: TradeSetup
+    icon: 'mdi-cog',
+    component: SetupView
   },
   {
-    path: '/result',
-    name: 'Result',
-    component: TradeLists,
-    meta: { requiresStaticData: true }
+    path: '/results',
+    name: 'Results',
+    icon: 'mdi-clipboard-text',
+    component: ResultsView
   }
 ].map(route => ({
   ...route,
-  meta: { ...(route.meta || {}), title: `${route.name} - ${mainTitle}` }
+  meta: { title: `${route.name} - ${mainTitle}` }
 }));
 
 const router = new VueRouter({
   routes
 });
 
-router.beforeEach((to, from, next) => {
-  if (to.meta.requiresStaticData && !store.state.isStaticDataLoaded) {
-    next('/');
-  } else {
-    document.title = to.meta.title;
+router.beforeEach(async (to, from, next) => {
+  document.title = to.meta.title;
+
+  if (to.path === '/' || store.state.isStaticDataLoaded) {
     next();
+  } else {
+    next('/');
   }
 });
 

@@ -1,3 +1,6 @@
+<style lang="scss" src="./SetupView.scss" scoped></style>
+<script lang="ts" src="./SetupView.ts"></script>
+
 <template>
   <v-container height="100%" class="d-flex flex-column justify-between">
     <v-card
@@ -18,7 +21,7 @@
         item-text="name"
         prepend-icon="mdi-location-exit"
         hide-details
-        :items="stations"
+        :items="fromStations"
         :value="fromStationId"
         @input="setFromStation($event)"
       />
@@ -36,26 +39,30 @@
         item-text="name"
         prepend-icon="mdi-location-enter"
         hide-details
-        :items="stations"
+        :items="toStations"
         :value="toStationId"
         @input="setToStation($event)"
       />
       <v-row class="d-flex">
         <v-col>
           <v-text-field
-            v-currency
+            type="number"
             label="Budget"
             suffix="ISK"
             :value="budget"
-            @change="setBudget($event)"
+            @input="setBudget(+$event)"
+            @keypress="validateKeys"
+            :messages="currency(budget)"
           />
         </v-col>
         <v-col>
           <v-text-field
-            v-volume
+            type="number"
             label="Cargo Capacity"
             :value="cargoCapacity"
-            @change="setCargoCapacity($event)"
+            @input="setCargoCapacity(+$event)"
+            @keypress="validateKeys"
+            :messages="volume(cargoCapacity)"
           >
             <template slot="append">
               m
@@ -77,16 +84,13 @@
         </v-col>
       </v-row>
       <v-btn
-        to="/result"
+        to="/results"
         :disabled="
           !fromStationId || !toStationId || fromStationId === toStationId
         "
       >
-        Run
+        Show results
       </v-btn>
     </v-card>
   </v-container>
 </template>
-
-<script lang="ts" src="./TradeSetup.ts"></script>
-<style lang="scss" src="./TradeSetup.scss" scoped></style>

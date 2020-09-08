@@ -48,3 +48,9 @@ input[type='number']::-webkit-outer-spin-button {
     background: white;
   }
 }
+
+.v-application {
+  &--wrap {
+    height: 100vh;
+  }
+}

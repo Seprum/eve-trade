@@ -7,16 +7,16 @@ import { debounce } from 'lodash';
 import { marketDataSource, CargoBatchComposer } from '@/services';
 import { OrderType } from '@/types/esi';
 import { Station, Batch, Item, Dictionary, LoadInfo, BuyList } from '@/types';
-import { quantity, currency, volume } from '@/helpers/formatters';
+import { integer, currency, volume } from '@/helpers/formatters';
 import { copyToClipboard } from '@/helpers/copyToClipboard';
-import Amount from '@/components/Amount.vue';
+import Amount from '@/components/Amount';
 import { DEFAULT_ROI_PERCENTAGE } from '@/constants';
 
 @Component({
-  methods: { quantity, currency, volume },
+  methods: { integer, currency, volume },
   components: { Amount }
 })
-export default class TradeLists extends Vue {
+export default class ResultsView extends Vue {
   dataLoaded = false;
   headers = [
     { text: 'Item', value: 'item.name' },
@@ -40,6 +40,7 @@ export default class TradeLists extends Vue {
   editedBatches: Dictionary<number>;
   removedBatches: number[];
 
+  @State isStaticDataLoaded: boolean;
   @State tradeHubs: Station[];
   @State fromStation: Station;
   @State toStation: Station;
@@ -47,12 +48,9 @@ export default class TradeLists extends Vue {
   @State budget: number;
   @State cargoCapacity: number;
   @State tax: number;
-  @Mutation setFromStation: (stationId: number) => void;
-  @Mutation setToStation: (stationId: number) => void;
   @Mutation swapStations: () => void;
 
   @Watch('toStation')
-  @Watch('fromStation')
   onStationChange() {
     this.dataLoaded = false;
     this.loadData();
