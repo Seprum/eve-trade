@@ -7,5 +7,4 @@ export type Batch = {
   buyAt: number;
   sellAt: number;
   netProfit: number;
-  efficiency: number;
 };

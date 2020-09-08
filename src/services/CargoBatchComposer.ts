@@ -1,21 +1,12 @@
-import { groupBy, orderBy, mapValues, sumBy, round, omit } from 'lodash';
+import { groupBy, orderBy, mapValues, sumBy, omit } from 'lodash';
 import { Order, Item, Batch, Dictionary } from '@/types';
 import { BuyList } from '@/types/BuyList';
-import { ILLEGAL_ITEMS, MIN_BUY_LIST_PROFIT } from '@/constants';
+import { ILLEGAL_ITEMS } from '@/constants';
 
 export class CargoBatchComposer {
   private batches: Batch[] = [];
 
-  setAllIn(value: boolean) {
-    this.allIn = value;
-    this.batches = orderBy(this.batches, this.getBatchBuyPriority, ['desc']);
-  }
-
-  constructor(
-    private tax: number,
-    private allIn: boolean,
-    private items: Dictionary<Item>
-  ) {}
+  constructor(private tax: number, private items: Dictionary<Item>) {}
 
   private sortAndGroupOrders(
     orders: Order[],
@@ -38,14 +29,10 @@ export class CargoBatchComposer {
   }
 
   private getBatchBuyPriority = (batch: Batch) => {
-    const buyPricePerCubicMetre = batch.buyAt / batch.item.volume;
-
     const profitPerCubicMetre =
       (this.excludeSalesTax(batch.sellAt) - batch.buyAt) / batch.item.volume;
 
-    return this.allIn
-      ? profitPerCubicMetre
-      : profitPerCubicMetre / buyPricePerCubicMetre;
+    return profitPerCubicMetre;
   };
 
   composeBatches(buyOrders: Order[], sellOrders: Order[]) {
@@ -62,7 +49,7 @@ export class CargoBatchComposer {
       const itemSellOrders = sellOrdersByItemId[itemId];
 
       let nextSellOrderIndex = 0;
-      for (const buyOrder of itemBuyOrders) {
+      ordersLoop: for (const buyOrder of itemBuyOrders) {
         if (itemSellOrders) {
           let bestSellOrder = itemSellOrders[nextSellOrderIndex];
           let sellQuantityLeft = bestSellOrder.quantity;
@@ -77,6 +64,12 @@ export class CargoBatchComposer {
                 bestSellOrder.quantity
               );
 
+              if (batchSize < bestSellOrder.minQuantity) {
+                // Best buy order's quantity is not enough for selling to best sell order, moving to next sell order
+                nextSellOrderIndex++;
+                continue ordersLoop;
+              }
+
               const netProfit =
                 this.excludeSalesTax(bestSellOrder.price) - buyOrder.price;
 
@@ -86,8 +79,7 @@ export class CargoBatchComposer {
                 quantity: batchSize,
                 buyAt: buyOrder.price,
                 sellAt: bestSellOrder.price,
-                netProfit,
-                efficiency: round(netProfit / buyOrder.price, 2)
+                netProfit
               });
 
               buyQuantityLeft -= batchSize;
@@ -124,8 +116,8 @@ export class CargoBatchComposer {
   getMostProfitableLoad(
     budget: number,
     cargoCapacity: number,
-    tax: number,
-    roi: number
+    roi: number,
+    allowDuplicates: boolean
   ) {
     const buyLists: BuyList[] = [
       { batches: [], totalBuyAt: 0, totalSellAt: 0, totalNetProfit: 0 }
@@ -164,19 +156,22 @@ export class CargoBatchComposer {
       const batchRoi = (batchNetProfit * 100) / batchBuyAt;
 
       if (affordedQuantity > 0 && batchRoi >= roi) {
-        totalBuyAt += batchBuyAt;
-        totalSellAt += batchSellAt;
-        volumeLeft -= batch.item.volume * affordedQuantity;
-        budgetLeft -= batch.buyAt * affordedQuantity;
-
         const suitableBuyList = buyLists.find(buyList =>
           buyList.batches.every(
             listedBatch => listedBatch.item.id !== batch.item.id
           )
         );
 
+        if (allowDuplicates || suitableBuyList) {
+          totalBuyAt += batchBuyAt;
+          totalSellAt += batchSellAt;
+          volumeLeft -= batch.item.volume * affordedQuantity;
+          budgetLeft -= batch.buyAt * affordedQuantity;
+        }
+
         const newBatch = {
           ...batch,
+          netProfit: batchNetProfit,
           id: batchIndex,
           quantity: affordedQuantity
         };
@@ -186,7 +181,7 @@ export class CargoBatchComposer {
           suitableBuyList.totalBuyAt += batchBuyAt;
           suitableBuyList.totalSellAt += batchSellAt;
           suitableBuyList.totalNetProfit += batchNetProfit;
-        } else {
+        } else if (allowDuplicates) {
           buyLists.push({
             batches: [newBatch],
             totalBuyAt: batchBuyAt,
@@ -200,9 +195,7 @@ export class CargoBatchComposer {
     }
 
     return {
-      buyLists: buyLists.filter(
-        buyList => buyList.totalNetProfit > MIN_BUY_LIST_PROFIT
-      ),
+      buyLists,
       loadInfo: {
         volumeLeft: volumeLeft < eps ? 0 : volumeLeft,
         budgetLeft: budgetLeft < eps ? 0 : budgetLeft,

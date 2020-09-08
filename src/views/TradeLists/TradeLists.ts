@@ -23,11 +23,11 @@ export default class TradeLists extends Vue {
     { text: 'Quantity', value: 'quantity' },
     { text: 'Buy At', value: 'buyAt' },
     { text: 'Sell At', value: 'sellAt' },
-    { text: 'Net Profit', value: 'netProfit' },
-    { text: 'Efficiency', value: 'efficiency' },
+    { text: 'Total Net Profit', value: 'netProfit' },
     { value: 'actions', sortable: false, align: 'end' }
   ];
   roi = DEFAULT_ROI_PERCENTAGE;
+  allowDuplicates = false;
   buyLists: BuyList[] = [];
   activeBuyList: BuyList = null;
   activePage = 1;
@@ -36,19 +36,22 @@ export default class TradeLists extends Vue {
 
   loadInfo: LoadInfo;
   cargoBatchComposer: CargoBatchComposer;
-  isAllInEnabled = true;
 
   editedBatches: Dictionary<number>;
   removedBatches: number[];
 
+  @State tradeHubs: Station[];
   @State fromStation: Station;
   @State toStation: Station;
   @State getItems: () => Dictionary<Item>;
   @State budget: number;
   @State cargoCapacity: number;
   @State tax: number;
+  @Mutation setFromStation: (stationId: number) => void;
+  @Mutation setToStation: (stationId: number) => void;
   @Mutation swapStations: () => void;
 
+  @Watch('toStation')
   @Watch('fromStation')
   onStationChange() {
     this.dataLoaded = false;
@@ -61,6 +64,19 @@ export default class TradeLists extends Vue {
     300
   );
 
+  @Watch('allowDuplicates')
+  onAllowDuplicatesStateChange() {
+    this.getMostProfitableLoad();
+  }
+
+  isFromStationDisabled(station: Station) {
+    return station.id === this.toStation.id;
+  }
+
+  isToStationDisabled(station: Station) {
+    return station.id === this.fromStation.id;
+  }
+
   get page() {
     return this.activePage;
   }
@@ -70,24 +86,10 @@ export default class TradeLists extends Vue {
     this.activeBuyList = this.buyLists[value - 1];
   }
 
-  get allIn() {
-    return this.isAllInEnabled;
-  }
-
-  set allIn(value) {
-    this.isAllInEnabled = value;
-    this.cargoBatchComposer.setAllIn(value);
-    this.getMostProfitableLoad();
-  }
-
   async created() {
     const items = this.getItems();
 
-    this.cargoBatchComposer = new CargoBatchComposer(
-      this.tax,
-      this.allIn,
-      items
-    );
+    this.cargoBatchComposer = new CargoBatchComposer(this.tax, items);
 
     await this.loadData();
   }
@@ -119,8 +121,8 @@ export default class TradeLists extends Vue {
     } = this.cargoBatchComposer.getMostProfitableLoad(
       this.budget,
       this.cargoCapacity,
-      this.tax,
-      this.roi
+      this.roi,
+      this.allowDuplicates
     );
 
     this.buyLists = buyLists;

@@ -20,6 +20,7 @@ class MarketDataSource {
       return orders
         .filter(order => order.location_id === stationId)
         .map<Order>(order => ({
+          type: order.is_buy_order ? OrderType.Buy : OrderType.Sell,
           itemId: order.type_id,
           quantity: order.volume_remain,
           minQuantity: order.min_volume,

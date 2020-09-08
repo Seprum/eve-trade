@@ -17,12 +17,13 @@
         item-value="id"
         item-text="name"
         prepend-icon="mdi-location-exit"
+        hide-details
         :items="stations"
         :value="fromStationId"
         @input="setFromStation($event)"
       />
       <v-btn
-        class="mx-auto"
+        class="mx-auto mt-4"
         icon
         :disabled="!fromStationId || !toStationId"
         @click="swapStations()"
@@ -34,6 +35,7 @@
         item-value="id"
         item-text="name"
         prepend-icon="mdi-location-enter"
+        hide-details
         :items="stations"
         :value="toStationId"
         @input="setToStation($event)"
@@ -79,8 +81,9 @@
         :disabled="
           !fromStationId || !toStationId || fromStationId === toStationId
         "
-        >Calculate</v-btn
       >
+        Run
+      </v-btn>
     </v-card>
   </v-container>
 </template>

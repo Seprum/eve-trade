@@ -13,8 +13,18 @@
     >
       <template v-slot:top>
         <v-layout flex-column class="header elevation-1">
-          <v-layout justify-center align-center pt-4 px-4>
-            <span>{{ fromStation.name }}</span>
+          <v-layout justify-center align-end pt-4 px-4>
+            <v-autocomplete
+              label="From"
+              item-value="id"
+              item-text="name"
+              :item-disabled="isFromStationDisabled"
+              hide-details
+              :items="tradeHubs"
+              :value="fromStation.id"
+              @input="setFromStation($event)"
+            />
+
             <v-hover v-slot:default="{ hover }">
               <v-btn
                 class="mx-4"
@@ -25,10 +35,19 @@
                 <v-icon click>mdi-arrow-right</v-icon>
               </v-btn>
             </v-hover>
-            <span>{{ toStation.name }}</span>
+            <v-autocomplete
+              label="To"
+              item-value="id"
+              item-text="name"
+              :item-disabled="isToStationDisabled"
+              hide-details
+              :items="tradeHubs"
+              :value="toStation.id"
+              @input="setToStation($event)"
+            />
           </v-layout>
           <v-row no-gutters>
-            <v-col cols="12" lg="6" class="d-flex align-center px-4">
+            <v-col cols="12" lg="4" class="d-flex align-center px-4">
               <v-slider
                 v-model="roi"
                 min="1"
@@ -40,7 +59,14 @@
               />
             </v-col>
             <v-col
-              v-if="!!activeBuyList"
+              cols="12"
+              lg="2"
+              class="d-flex align-center justify-center justify-lg-end px-4"
+            >
+              <v-switch v-model="allowDuplicates" label="Allow duplicates" />
+            </v-col>
+            <v-col
+              v-if="!!activeBuyList && allowDuplicates"
               cols="12"
               lg="6"
               class="d-flex align-center justify-center justify-lg-end px-4"
@@ -59,8 +85,8 @@
               </amount>
               <amount title="Current list net profit" icon="mdi-cash-plus">
                 {{ currency(activeBuyList.totalNetProfit) }} ISK
-              </amount></v-col
-            >
+              </amount>
+            </v-col>
           </v-row>
         </v-layout>
       </template>
@@ -85,9 +111,6 @@
       <template v-slot:item.netProfit="{ item }">
         <span>{{ currency(item.netProfit) }}</span>
       </template>
-      <template v-slot:item.efficiency="{ item }">
-        <span>{{ currency(item.efficiency) }}</span>
-      </template>
       <template v-slot:item.copy="{ item }">
         <v-icon small :color="item.copied ? 'white' : 'grey'">
           mdi-content-copy
@@ -106,23 +129,23 @@
               title="Total buy price"
               icon="mdi-credit-card-minus-outline"
             >
-              {{ currency(loadInfo.totalBuyAt) }} ISK</amount
-            >
+              {{ currency(loadInfo.totalBuyAt) }} ISK
+            </amount>
             <amount
               title="Total sell price (excluding sales tax)"
               icon="mdi-credit-card-plus-outline"
             >
-              {{ currency(loadInfo.totalSellAt) }} ISK</amount
-            >
+              {{ currency(loadInfo.totalSellAt) }} ISK
+            </amount>
             <amount title="Cargo capacity left" icon="mdi-package-variant">
-              {{ volume(loadInfo.volumeLeft) }} m<sup>3</sup></amount
-            >
+              {{ volume(loadInfo.volumeLeft) }} m<sup>3</sup>
+            </amount>
             <amount title="Budget left" icon="mdi-cash">
-              {{ currency(loadInfo.budgetLeft) }} ISK</amount
-            >
+              {{ currency(loadInfo.budgetLeft) }} ISK
+            </amount>
             <amount title="Total net profit" icon="mdi-cash-plus">
-              {{ currency(loadInfo.totalNetProfit) }} ISK</amount
-            >
+              {{ currency(loadInfo.totalNetProfit) }} ISK
+            </amount>
             <v-layout justify-end>
               <v-btn class="mr-4" @click="refit()">Refit</v-btn>
               <v-btn class="mr-4" @click="copyActiveBuyList()">Copy</v-btn>
@@ -131,6 +154,7 @@
           </v-layout>
         </v-layout>
         <v-pagination
+          v-if="allowDuplicates"
           v-model="page"
           :length="buyLists.length"
           class="pb-4 px-2 ml-auto"
