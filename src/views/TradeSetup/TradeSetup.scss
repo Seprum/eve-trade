@@ -1,0 +1,13 @@
+.container {
+  max-width: 640px;
+}
+
+.v-input ::v-deep .v-input {
+  &__append-inner {
+    line-height: 24px;
+  }
+}
+
+sup {
+  top: 0.4em;
+}

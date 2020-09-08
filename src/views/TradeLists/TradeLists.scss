@@ -1,0 +1,50 @@
+.header {
+  flex-grow: 0;
+  background-color: #272727;
+  z-index: 3;
+}
+
+.v-input {
+  ::v-deep {
+    .v-label {
+      font-size: 14px;
+    }
+  }
+}
+
+.v-data-table {
+  width: 100%;
+  height: calc(100vh - 40px);
+  display: flex;
+  flex-direction: column;
+  align-self: flex-start;
+  overflow: hidden;
+
+  ::v-deep {
+    th {
+      white-space: nowrap;
+
+      i {
+        line-height: 0.9;
+      }
+    }
+
+    .v-data-table {
+      &__wrapper {
+        height: 100%;
+      }
+    }
+  }
+}
+
+.v-pagination {
+  width: auto;
+
+  ::v-deep button {
+    outline: none;
+  }
+}
+
+.rotated {
+  transform: rotate(180deg);
+}
