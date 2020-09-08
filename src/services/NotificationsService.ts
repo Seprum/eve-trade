@@ -102,7 +102,6 @@ class NotificationsService {
 
     this.lastNotification = new Notification(title, {
       body: content,
-      icon: require('@/assets/logo.png'),
       requireInteraction: true
     });
   }

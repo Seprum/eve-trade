@@ -1,4 +1,4 @@
-// import storage from 'electron-json-storage';
+import storage from 'electron-json-storage';
 import { Station, Item, Dictionary } from '@/types';
 
 const ITEMS_STORE_KEY = 'eveItems';
@@ -6,29 +6,27 @@ const STATIONS_STORE_KEY = 'eveStations';
 
 class StaticDataStore {
   private load<T extends object>(storeKey: string) {
-    // return new Promise<T | null>((resolve, reject) =>
-    //   storage.get(storeKey, (err, data) => {
-    //     if (err) {
-    //       reject(err);
-    //     } else {
-    //       resolve(Object.keys(data).length ? (data as T) : null);
-    //     }
-    //   })
-    // );
-    return JSON.parse(localStorage.getItem(storeKey) || 'null');
+    return new Promise<T | null>((resolve, reject) =>
+      storage.get(storeKey, (err, data) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(Object.keys(data).length ? (data as T) : null);
+        }
+      })
+    );
   }
 
   private save<T extends object>(storeKey: string, data: T) {
-    // return new Promise((resolve, reject) =>
-    //   storage.set(storeKey, data, (err) => {
-    //     if (err) {
-    //       reject(err);
-    //     } else {
-    //       resolve();
-    //     }
-    //   })
-    // );
-    localStorage.setItem(storeKey, JSON.stringify(data));
+    return new Promise((resolve, reject) =>
+      storage.set(storeKey, data, err => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve();
+        }
+      })
+    );
   }
 
   public loadStations() {

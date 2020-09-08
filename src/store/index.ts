@@ -165,12 +165,12 @@ export default new Vuex.Store<State>({
         commit('setToStation', toStationId);
       }
 
-      let items = staticDataStore.loadItems();
+      let items = await staticDataStore.loadItems();
 
       if (!items) {
         items = await staticDataSource.getItemsData();
         commit('setLoadingStatus', 'Saving items...');
-        staticDataStore.saveItems(items);
+        await staticDataStore.saveItems(items);
       }
 
       commit('setItems', items);
@@ -185,12 +185,12 @@ export default new Vuex.Store<State>({
 
       commit('setStations', stations);
       commit('setLoadingStatus', 'Saving stations...');
-      staticDataStore.saveStations(stations);
+      await staticDataStore.saveStations(stations);
 
       const items = await staticDataSource.getItemsData();
 
       commit('setLoadingStatus', 'Saving items...');
-      staticDataStore.saveItems(items);
+      await staticDataStore.saveItems(items);
 
       commit('setLoadingStatus', 'Stations & items data loaded');
     }

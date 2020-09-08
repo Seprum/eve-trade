@@ -1,3 +1,10 @@
 module.exports = {
-  transpileDependencies: ['vuetify']
+  transpileDependencies: ['vuetify'],
+  pluginOptions: {
+    electronBuilder: {
+      builderOptions: {
+        productName: 'EVE Trade'
+      }
+    }
+  }
 };
